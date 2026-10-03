@@ -68,9 +68,11 @@ export class NotasController {
   }
 
   @Get("notas")
-  list(@Req() req: Request) {
+  async list(@Req() req: Request) {
+    const workspaceId = workspaceOf(req);
+    await this.syncNotaRefsFromFiscal(workspaceId);
     return this.prisma.client.notaFiscalRef.findMany({
-      where: { workspaceId: workspaceOf(req) },
+      where: { workspaceId },
       orderBy: { createdAt: "desc" },
     });
   }
@@ -127,6 +129,60 @@ export class NotasController {
     const result = await this.fiscal.request(workspaceOf(req), path, init);
     if (result.status >= 400) throwFiscal(result.status, result.data);
     return result.data;
+  }
+
+  private async syncNotaRefsFromFiscal(workspaceId: string) {
+    type FiscalInvoiceRow = {
+      id: string;
+      emitterId: string;
+      status: string;
+      number: number | null;
+      series: number | null;
+      accessKey: string | null;
+      totalValue: number | string;
+      authorizedAt: string | null;
+      rejectionMessage: string | null;
+      originType: string | null;
+      originId: string | null;
+      requestPayload: { recipient?: { name?: string } } | null;
+      emitter?: { cnpj: string; legalName: string };
+    };
+    const result = await this.fiscal.request<FiscalInvoiceRow[]>(workspaceId, "/invoices");
+    if (result.status >= 400) return;
+    for (const invoice of result.data) {
+      const recipientName = invoice.requestPayload?.recipient?.name ?? "";
+      await this.prisma.client.notaFiscalRef.upsert({
+        where: { fiscalInvoiceId: invoice.id },
+        create: {
+          workspaceId,
+          fiscalInvoiceId: invoice.id,
+          emitterId: invoice.emitterId,
+          emitterCnpj: invoice.emitter?.cnpj ?? "",
+          emitterName: invoice.emitter?.legalName ?? "",
+          recipientName,
+          status: invoice.status,
+          number: invoice.number,
+          series: invoice.series,
+          accessKey: invoice.accessKey,
+          totalValue: Number(invoice.totalValue),
+          rejectionMessage: invoice.rejectionMessage,
+          authorizedAt: invoice.authorizedAt ? new Date(invoice.authorizedAt) : null,
+        },
+        update: {
+          emitterId: invoice.emitterId,
+          emitterCnpj: invoice.emitter?.cnpj ?? "",
+          emitterName: invoice.emitter?.legalName ?? "",
+          recipientName,
+          status: invoice.status,
+          number: invoice.number,
+          series: invoice.series,
+          accessKey: invoice.accessKey,
+          totalValue: Number(invoice.totalValue),
+          rejectionMessage: invoice.rejectionMessage,
+          authorizedAt: invoice.authorizedAt ? new Date(invoice.authorizedAt) : null,
+        },
+      });
+    }
   }
 }
 

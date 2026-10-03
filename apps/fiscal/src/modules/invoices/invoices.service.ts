@@ -128,6 +128,7 @@ export class InvoicesService {
           lte: query.to ? new Date(query.to) : undefined,
         },
       },
+      include: { emitter: true },
       orderBy: { createdAt: "desc" },
     });
   }

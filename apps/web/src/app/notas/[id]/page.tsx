@@ -87,7 +87,7 @@ export default function NotaDetailPage() {
       {(nota.status === "REJECTED" || nota.status === "ERROR") && (
         <Link href={`/notas/nova?from=${nota.id}`}>Corrigir e reenviar</Link>
       )}
-      {nota.status === "PENDING" && <p>Aguarde o processamento. Reenviar agora criaria outra nota.</p>}
+      {nota.status === "PENDING" && <p>Aguarde o processamento.</p>}
       <h2>Timeline</h2>
       <ul>
         {events.map((event) => (
