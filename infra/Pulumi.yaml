@@ -1,0 +1,5 @@
+name: mvp-fiscal-infra
+runtime:
+  name: nodejs
+description: Infraestrutura AWS do MVP Fiscal em Pulumi
+main: index.ts

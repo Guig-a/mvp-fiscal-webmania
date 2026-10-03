@@ -3,14 +3,20 @@ import { SQSClient } from "@aws-sdk/client-sqs";
 import { SSMClient } from "@aws-sdk/client-ssm";
 
 export function awsConfig() {
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
   return {
     region: process.env.AWS_REGION ?? "sa-east-1",
-    endpoint: process.env.AWS_ENDPOINT_URL ?? "http://localhost:4566",
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "test",
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "test",
-    },
-    forcePathStyle: process.env.S3_FORCE_PATH_STYLE !== "false",
+    endpoint: process.env.AWS_ENDPOINT_URL,
+    credentials:
+      accessKeyId && secretAccessKey
+        ? {
+            accessKeyId,
+            secretAccessKey,
+          }
+        : undefined,
+    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
   };
 }
 

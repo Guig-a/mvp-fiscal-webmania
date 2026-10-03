@@ -8,4 +8,7 @@ dist
 coverage
 apps/*/prisma/generated
 apps/*/.env
+.pulumi
+Pulumi.*.yaml.backup
+Pulumi.*.yaml.lock
 .DS_Store

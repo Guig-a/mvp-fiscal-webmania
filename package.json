@@ -20,6 +20,9 @@
     "dev": "concurrently -n erp,fiscal,worker,persist,dlq,web -c blue,green,yellow,magenta,red,cyan \"pnpm dev:erp\" \"pnpm dev:fiscal:api\" \"pnpm dev:fiscal:worker\" \"pnpm dev:fiscal:persist\" \"pnpm dev:fiscal:dlq\" \"pnpm dev:web\"",
     "test": "pnpm --filter @fiscal-mvp/fiscal test && pnpm --filter @fiscal-mvp/erp test && pnpm --filter @fiscal-mvp/contracts test",
     "e2e": "tsx scripts/e2e.ts",
+    "iac:preview": "pnpm --filter @fiscal-mvp/infra pulumi:preview",
+    "iac:up": "pnpm --filter @fiscal-mvp/infra pulumi:up",
+    "iac:destroy": "pnpm --filter @fiscal-mvp/infra pulumi:destroy",
     "postinstall": "node scripts/prisma-generate.mjs",
     "build": "pnpm -r build"
   },

@@ -1,0 +1,41 @@
+config:
+  aws:region: sa-east-1
+  mvp-fiscal-infra:environment: staging
+  mvp-fiscal-infra:projectName: fiscal-mvp
+  mvp-fiscal-infra:network:
+    vpcCidr: 10.50.0.0/16
+    availabilityZones:
+      - sa-east-1a
+      - sa-east-1b
+    enableNatGateway: true
+    publicSubnetCidrs:
+      - 10.50.0.0/24
+      - 10.50.1.0/24
+    privateAppSubnetCidrs:
+      - 10.50.10.0/24
+      - 10.50.11.0/24
+    privateDbSubnetCidrs:
+      - 10.50.20.0/24
+      - 10.50.21.0/24
+  mvp-fiscal-infra:database:
+    dbName: fiscal
+    username: fiscal
+    instanceClass: db.t4g.small
+    allocatedStorage: 50
+    maxAllocatedStorage: 200
+    multiAz: false
+    backupRetentionDays: 14
+    deletionProtection: true
+  mvp-fiscal-infra:app:
+    erpWebhookUrl: https://erp.staging.example.com/fiscal/webhook
+    fiscalProvider: webmania
+    defaultWorkspaceId: ws_demo_a
+    pendingStaleSeconds: 180
+    processingStaleSeconds: 180
+    presignMode: url
+    presignTtlSeconds: 60
+    reconcileEveryMinutes: 5
+  mvp-fiscal-infra:features:
+    enableBastion: false
+    enableSupportTable: false
+    enableLambdaFunctions: false
