@@ -1,0 +1,39 @@
+services:
+  erp-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: erp
+      POSTGRES_USER: erp
+      POSTGRES_PASSWORD: erp
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp -d erp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  fiscal-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: fiscal
+      POSTGRES_USER: fiscal
+      POSTGRES_PASSWORD: fiscal
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fiscal -d fiscal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  aws:
+    image: floci/floci:latest-compat
+    ports:
+      - "4566:4566"
+    environment:
+      FLOCI_DEFAULT_REGION: sa-east-1
+      AWS_DEFAULT_REGION: sa-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    restart: unless-stopped
