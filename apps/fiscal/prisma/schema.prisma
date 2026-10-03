@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Environment {
+  HOMOLOGACAO
+  PRODUCAO
+}
+
+enum InvoiceType {
+  NFE
+}
+
+enum InvoiceStatus {
+  PENDING
+  PROCESSING
+  AUTHORIZED
+  REJECTED
+  ERROR
+  CANCELLED
+}
+
+enum InvoiceEventType {
+  CREATED
+  ENQUEUED
+  WORKER_STARTED
+  WORKER_FINISHED
+  RESULT_RECEIVED
+  PROCESSING
+  AUTHORIZED
+  REJECTED
+  ERROR
+  WEBHOOK_SENT
+  WEBHOOK_FAILED
+  CANCEL_REQUESTED
+  CANCELLED
+  CHECK_STATUS_ENQUEUED
+  PROVIDER_CALLBACK_RECEIVED
+}
+
+enum Operation {
+  VENDA
+}
+
+model Emitter {
+  id            String      @id @default(uuid()) @db.Uuid
+  workspaceId   String      @map("workspace_id")
+  cnpj          String
+  legalName     String      @map("legal_name")
+  tradeName     String?     @map("trade_name")
+  ie            String?
+  im            String?
+  crt           Int
+  uf            String      @db.Char(2)
+  address       Json
+  environment   Environment
+  series        Int         @default(1)
+  credentialRef String      @map("credential_ref")
+  active        Boolean     @default(true)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  invoices      Invoice[]
+
+  @@unique([cnpj, environment])
+  @@index([workspaceId])
+  @@map("emitters")
+}
+
+model FiscalProfile {
+  id          String       @id @default(uuid()) @db.Uuid
+  workspaceId String       @map("workspace_id")
+  name        String
+  description String?
+  active      Boolean      @default(true)
+  rules       FiscalRule[]
+
+  @@unique([workspaceId, name])
+  @@map("fiscal_profiles")
+}
+
+model FiscalRule {
+  id            String        @id @default(uuid()) @db.Uuid
+  profileId     String        @map("profile_id") @db.Uuid
+  profile       FiscalProfile @relation(fields: [profileId], references: [id])
+  operation     Operation
+  ufOrigin      String?       @map("uf_origin")
+  ufDestination String?       @map("uf_destination")
+  cfop          String
+  taxCode       String        @map("tax_code")
+  taxes         Json?
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  @@unique([profileId, operation, ufOrigin, ufDestination])
+  @@map("fiscal_rules")
+}
+
+model Invoice {
+  id                String        @id @default(uuid()) @db.Uuid
+  workspaceId       String        @map("workspace_id")
+  emitterId         String        @map("emitter_id") @db.Uuid
+  emitter           Emitter       @relation(fields: [emitterId], references: [id])
+  type              InvoiceType   @default(NFE)
+  status            InvoiceStatus @default(PENDING)
+  idempotencyKey    String        @map("idempotency_key")
+  requestHash       String        @map("request_hash")
+  originType        String?       @map("origin_type")
+  originId          String?       @map("origin_id")
+  operation         Operation
+  purpose           Int
+  requestPayload    Json          @map("request_payload")
+  resolvedItems     Json          @map("resolved_items")
+  totalValue        Decimal       @map("total_value") @db.Decimal(14, 2)
+  number            Int?
+  series            Int?
+  accessKey         String?       @unique @map("access_key")
+  protocol          String?
+  environment       Environment
+  providerRef       String?       @map("provider_ref")
+  s3XmlKey          String?       @map("s3_xml_key")
+  s3PdfKey          String?       @map("s3_pdf_key")
+  rejectionCode     String?       @map("rejection_code")
+  rejectionMessage  String?       @map("rejection_message")
+  referencedKey     String?       @map("referenced_key")
+  authorizedAt      DateTime?     @map("authorized_at")
+  processingAt      DateTime?     @map("processing_at")
+  lastCheckedAt     DateTime?     @map("last_checked_at")
+  checkCount        Int           @default(0) @map("check_count")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  events            InvoiceEvent[]
+
+  @@unique([emitterId, idempotencyKey])
+  @@index([workspaceId, status, createdAt])
+  @@index([status, createdAt])
+  @@map("invoices")
+}
+
+model InvoiceEvent {
+  id         String           @id @default(uuid()) @db.Uuid
+  invoiceId  String           @map("invoice_id") @db.Uuid
+  invoice    Invoice          @relation(fields: [invoiceId], references: [id])
+  type       InvoiceEventType
+  payload    Json
+  occurredAt DateTime         @default(now()) @map("occurred_at")
+
+  @@map("invoice_events")
+}

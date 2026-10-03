@@ -1,0 +1,12 @@
+-- AlterEnum
+ALTER TYPE "InvoiceStatus" ADD VALUE 'PROCESSING';
+
+-- AlterEnum
+ALTER TYPE "InvoiceEventType" ADD VALUE 'PROCESSING';
+ALTER TYPE "InvoiceEventType" ADD VALUE 'CHECK_STATUS_ENQUEUED';
+ALTER TYPE "InvoiceEventType" ADD VALUE 'PROVIDER_CALLBACK_RECEIVED';
+
+-- AlterTable
+ALTER TABLE "invoices" ADD COLUMN "processing_at" TIMESTAMP(3),
+ADD COLUMN "last_checked_at" TIMESTAMP(3),
+ADD COLUMN "check_count" INTEGER NOT NULL DEFAULT 0;
