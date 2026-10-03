@@ -181,6 +181,55 @@ Ambiente real na AWS (resumo; detalhes em `spec.md` §20–21):
 
 ---
 
+## Infra Pulumi
+
+Toda a base de produção está em [`infra/`](infra/): VPC, subnets, SGs, S3, SQS/DLQ, RDS, ECR, API Gateway, IAM, alarmes e dashboard.
+
+### Fluxo básico
+
+```bash
+pnpm install
+pnpm iac:stack:init:dev      # rode uma vez por stack
+pnpm iac:stack:select:dev
+```
+
+Configurar secrets obrigatórios:
+
+```bash
+cd infra
+pulumi config set --secret mvp-fiscal-infra:dbPassword "<senha-do-rds>"
+pulumi config set --secret mvp-fiscal-infra:fiscalApiKey "<api-key-interna>"
+pulumi config set --secret mvp-fiscal-infra:webhookSecret "<hmac-fiscal-erp>"
+pulumi config set --secret mvp-fiscal-infra:webmaniaCallbackSecret "<hmac-callback-webmania>"
+cd ..
+```
+
+Planejar e aplicar:
+
+```bash
+pnpm iac:preview
+pnpm iac:up
+```
+
+Destruir a stack selecionada:
+
+```bash
+pnpm iac:destroy
+```
+
+### Deploy das lambdas
+
+O stack sobe a base sem depender do console, mas as lambdas em container ficam condicionais a imagens publicadas no ECR. O fluxo é:
+
+1. `pnpm iac:up` com `enableLambdaFunctions: false` para criar rede, filas, banco, bucket e repositórios.
+2. Publicar as imagens `fiscal-api`, `fiscal-callback`, `fiscal-worker`, `fiscal-persist`, `fiscal-dlq` nos ECRs exportados pelo Pulumi.
+3. Em `infra`, setar `mvp-fiscal-infra:images.*` e `mvp-fiscal-infra:features.enableLambdaFunctions=true`.
+4. Rodar `pnpm iac:up` novamente para anexar as lambdas e integrações.
+
+Detalhes e exemplos de `pulumi config set` estão em [`infra/README.md`](infra/README.md).
+
+---
+
 ## Problemas comuns (Windows)
 
 | Sintoma | Ação |
