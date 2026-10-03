@@ -1,0 +1,31 @@
+{
+  "name": "fiscal-mvp",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "infra:up": "docker compose up -d",
+    "infra:init": "tsx apps/fiscal/src/aws/ensure-cli.ts",
+    "infra:down": "docker compose down",
+    "db:migrate": "pnpm --filter @fiscal-mvp/fiscal prisma:migrate && pnpm --filter @fiscal-mvp/erp prisma:migrate",
+    "seed": "pnpm --filter @fiscal-mvp/fiscal seed && pnpm --filter @fiscal-mvp/erp seed",
+    "dev:erp": "pnpm --filter @fiscal-mvp/erp start:dev",
+    "dev:fiscal:api": "pnpm --filter @fiscal-mvp/fiscal start:api",
+    "dev:fiscal:worker": "pnpm --filter @fiscal-mvp/fiscal start:worker",
+    "dev:fiscal:persist": "pnpm --filter @fiscal-mvp/fiscal start:persist",
+    "dev:fiscal:dlq": "pnpm --filter @fiscal-mvp/fiscal start:dlq",
+    "dev:web": "pnpm --filter @fiscal-mvp/web dev",
+    "dev": "concurrently -n erp,fiscal,worker,persist,dlq,web -c blue,green,yellow,magenta,red,cyan \"pnpm dev:erp\" \"pnpm dev:fiscal:api\" \"pnpm dev:fiscal:worker\" \"pnpm dev:fiscal:persist\" \"pnpm dev:fiscal:dlq\" \"pnpm dev:web\"",
+    "test": "pnpm --filter @fiscal-mvp/fiscal test && pnpm --filter @fiscal-mvp/erp test && pnpm --filter @fiscal-mvp/contracts test",
+    "e2e": "tsx scripts/e2e.ts",
+    "postinstall": "node scripts/prisma-generate.mjs",
+    "build": "pnpm -r build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}
