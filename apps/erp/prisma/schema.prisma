@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EntryKind {
+  INCOME
+  EXPENSE
+}
+
+enum EntryStatus {
+  OPEN
+  PAID
+}
+
+model Product {
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String   @map("workspace_id")
+  name            String
+  unit            String
+  price           Decimal  @db.Decimal(14, 2)
+  ncm             String
+  cest            String?
+  origin          Int
+  fiscalProfileId String?  @map("fiscal_profile_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("products")
+}
+
+model FinancialEntry {
+  id          String               @id @default(uuid()) @db.Uuid
+  workspaceId String               @map("workspace_id")
+  kind        EntryKind
+  description String
+  amount      Decimal              @db.Decimal(14, 2)
+  dueDate     DateTime             @map("due_date")
+  status      EntryStatus          @default(OPEN)
+  createdAt   DateTime             @default(now()) @map("created_at")
+  notas       FinancialEntryNota[]
+
+  @@map("financial_entries")
+}
+
+model NotaFiscalRef {
+  id                String               @id @default(uuid()) @db.Uuid
+  workspaceId       String               @map("workspace_id")
+  fiscalInvoiceId   String               @unique @map("fiscal_invoice_id")
+  emitterId         String               @map("emitter_id")
+  emitterCnpj       String               @map("emitter_cnpj")
+  emitterName       String               @map("emitter_name")
+  recipientName     String               @map("recipient_name")
+  status            String
+  number            Int?
+  series            Int?
+  accessKey         String?              @map("access_key")
+  totalValue        Decimal              @map("total_value") @db.Decimal(14, 2)
+  rejectionMessage  String?              @map("rejection_message")
+  authorizedAt      DateTime?            @map("authorized_at")
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+  financialLinks    FinancialEntryNota[]
+
+  @@map("nota_fiscal_refs")
+}
+
+model FinancialEntryNota {
+  financialEntryId String         @map("financial_entry_id") @db.Uuid
+  notaFiscalRefId  String         @map("nota_fiscal_ref_id") @db.Uuid
+  createdAt        DateTime       @default(now()) @map("created_at")
+  financialEntry   FinancialEntry @relation(fields: [financialEntryId], references: [id])
+  notaFiscalRef    NotaFiscalRef  @relation(fields: [notaFiscalRefId], references: [id])
+
+  @@id([financialEntryId, notaFiscalRefId])
+  @@map("financial_entry_notas")
+}
+
+model FiscalEventInbox {
+  eventId    String   @id @map("event_id")
+  receivedAt DateTime @default(now()) @map("received_at")
+
+  @@map("fiscal_event_inbox")
+}
